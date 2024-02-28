@@ -1,0 +1,117 @@
+import Install from './_install.mdx';
+import Init from './_init.mdx';
+
+# Transactionクラスの使い方
+
+Transactionクラスは、即時配信メールを送信するクラスです。
+
+## 利用用途
+
+Transactionクラスは以下のような用途に利用できます。
+
+- ユーザー登録時のメール認証
+- パスワードリセット時のメール認証
+- Eコマースの購入完了メール
+- 通知メール
+- その他、一人の相手に対して即時配信するメール
+
+## 使い方
+
+<Install />
+
+### SDKのインポート
+
+blastengine SDK全体を管理する `Client` クラスと、即時配信メールを行う `Transaction` クラスをインポートします。
+
+```python
+from blastengine.Client import Blastengine
+from blastengine.Transaction import Transaction
+```
+
+<Init />
+
+### Transactionクラスのインスタンス作成と設定
+
+`Transaction` クラスのインスタンスを作成し、続けてメールの内容を設定します。
+
+```python
+# トランザクション（即時発送）メールオブジェクトの作成
+transaction = Transaction()
+# 件名の設定
+transaction.subject('メールの件名')
+# テキスト本文の設定
+transaction.text_part('テキスト本文')
+# 送信元の設定。2つ目の引数（名前）はオプション
+transaction.fromAddress('info@example.jp', '管理者')
+# 宛先。1オブジェクトに1アドレスです
+transaction.to('user1@example.com')
+
+# CCの設定
+transaction.cc('cc1@example.com')
+# CCの宛先が複数の場合は、複数回呼び出します
+transaction.cc('cc2@example.com')
+
+# BCCの設定
+transaction.bcc('bcc1@example.com')
+# BCCの宛先が複数の場合は、複数回呼び出します
+transaction.bcc('bcc2@example.com')
+```
+
+この他、Transactionクラスには以下のメソッドがあります。
+
+- insert_code(self, key, value)  
+	メール本文に埋め込む変数を設定します。`key` には変数名、 `value` には変数の値を指定します。  
+	例: `transaction.insert_code('name', '山田太郎')`  
+	メール本文中に `__name__` と記述すると、 `山田太郎` に置換されます。
+- encode(self, encoding)  
+	メール本文のエンコードを設定します。デフォルトは `utf-8` です。
+- html_part(self, html)  
+	HTML本文を設定します。テキスト本文と併用できます。
+- unsubscribe(self, *, url=None, email=None)  
+	メール本文に含める購読解除リンクを設定します。urlとemailのどちらか一方は指定します。
+- attachments(self, file_path)  
+	添付ファイルを設定します。複数回呼び出すことで複数の添付ファイルを設定できます。
+
+#### 添付ファイルを追加する
+
+添付ファイルは attachments メソッドで、ファイルのパスを指定してください。複数の添付ファイルを追加する場合は、複数回呼び出してください。
+
+```python
+# 添付ファイルがある場合
+transaction.attachments('./test.py')
+transaction.attachments('./image.png')
+```
+
+#### 購読解除リンクを追加する
+
+メールマガジンなどの購読解除リンク `Unsubscribe-List` ヘッダーを追加する場合は、`unsubscribe` メソッドを呼び出してください。
+
+```python
+# 購読解除リンクを追加する（URL、Email両方あり）
+transaction.unsubscribe(url='https://example.com/unsubscribe/__hash__', email='unsubscrie+__hash__@example.com')
+# 購読解除リンクを追加する（URLのみ）
+transaction.unsubscribe(url='https://example.com/unsubscribe/__hash__')
+# 購読解除リンクを追加する（Emailのみ）
+transaction.unsubscribe(email='unsubscrie+__hash__@example.com')
+```
+
+この時の `__hash__` は、 insert_code メソッドで設定できます。
+
+```python
+transaction.insert_code('hash', '1234567890')
+```
+
+### メールの送信
+
+送信は `Transaction` クラスの `send` メソッドを呼び出します。返値はデリバリーIDになります。このデリバリーIDで、メールの送信状況や配信停止などを行います（トランザクションメールは即時配信されるので停止できません）。
+
+```python
+try:
+	# 送信
+	delivery_id = transaction.send()
+	print(delivery_id)
+except Exception as e:
+	# APIエラー
+	print(e)
+```
+

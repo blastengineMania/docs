@@ -1,0 +1,199 @@
+import Install from './_install.mdx';
+import Init from './_init.mdx';
+
+# Bulkクラスの使い方
+
+Bulkクラスは、複数の宛先に対して一括配信メールを送信するクラスです。
+
+## 利用用途
+
+Bulkクラスは以下のような用途に利用できます。
+
+- メールマガジンの配信
+- ニュースレターの配信
+- その他、マーケティング系メールの配信
+- 顧客向けの一斉配信
+
+## 使い方
+
+<Install />
+
+### SDKのインポート
+
+blastengine SDK全体を管理する `Client` クラスと、一括配信メールを行う `Bulk` クラスをインポートします。
+
+```python
+from blastengine.Client import Blastengine
+from blastengine.Bulk import Bulk
+```
+
+<Init />
+
+### Bulkクラスのインスタンス作成と設定
+
+`Bulk` クラスのインスタンスを作成し、続けてメールの内容を設定します。
+
+```python
+# バルク（一括発送）メールオブジェクトの作成
+bulk = Bulk()
+# 件名の設定
+bulk.subject('メールの件名')
+# テキスト本文の設定。 __name__ は置き換えられる文字列
+bulk.text_part('テキスト本文 __name__')
+# 送信元の設定。2つ目の引数（名前）はオプション
+bulk.fromAddress('info@example.jp', '管理者')
+```
+
+#### 添付ファイルを追加する
+
+添付ファイルは attachments メソッドで、ファイルのパスを指定してください。複数の添付ファイルを追加する場合は、複数回呼び出してください。
+
+```python
+# 添付ファイルがある場合
+bulk.attachments('./test.py')
+bulk.attachments('./image.png')
+```
+
+### 一度保存する
+
+このメールテンプレートができた段階で一度保存します。
+
+```python
+try:
+	bulk.begin()
+except Exception as e:
+	# APIエラー
+	print(e)
+```
+
+### 宛先を設定する
+
+次に宛先を設定します。宛先の指定方法は、以下の2つがあります。
+
+#### 1. コードで指定する
+
+この時、置き換え文字列を設定できます。
+
+```python
+bulk.to('user1@example.com', [{
+	'__name__': 'User1'
+}])
+bulk.to('user2@example.com', [{
+	'__name__': 'User2'
+}])
+```
+
+宛先を設定したら、保存を行います。保存すると宛先のリストはリセットされます。
+
+```python
+bulk.update()
+```
+
+#### 2. CSVファイルをアップロードする
+
+CSVファイルなどで宛先のリストがある場合には、CSVアップロードが便利です。[テンプレートはこちらからダウンロード](https://blastengine.jp/documents/example.csv)できます。
+
+```csv
+email,__prop1__,__prop2__,__prop3__
+test@example.jp,テスト,テスト太郎,20200101
+sample1@example.com,サンプル,サンプル次郎,20210101
+```
+
+このファイルをBulkクラスのcsv_importで指定します。そうするとJobオブジェクトが返ってきます。
+
+```python
+job = bulk.csv_import('./example.csv')
+print(job.job_id)
+# => 50
+```
+
+このCSVアップロードは非同期で処理されますので、完了まで待ちます。
+
+```py
+while job.finished() == False:
+	print(job.status) # => STARTED
+	# 処理待ち
+	time.sleep(5)
+```
+
+完了したら、取り込みエラーがあったかを確認できます。
+
+```py
+print(job.total_count)
+# => 200
+print(job.success_count)
+# => 198
+print(job.failed_count)
+# => 2
+```
+
+もしエラーがあれば、その原因を記したファイルをダウンロードできます。この内容はZipコンテンツなので、ダウンロード先のファイル名は `.zip` にしておくのが良いでしょう。
+
+```py
+job.download_error_file('result.zip')
+# => True
+```
+
+例えば以下のようなエラーが書かれています。
+
+```csv
+"エラーメッセージ","email","__prop1__","__prop2__","__prop3__"
+"[email: [sample1@example: 無効なEメールアドレス形式です。]]","sample1@example","サンプル","サンプル次郎","20210101"
+```
+
+### メールを送信する
+
+送信は `send` メソッドになります。返値はデリバリーIDになります。このデリバリーIDで、メールの送信状況や配信停止などを行います。
+
+#### 即時配信する
+
+`send` メソッドを引数なしで実行すれば、メールは即時配信準備に入ります。
+
+```py
+try:
+	# 送信
+	delivery_id = bulk.send()
+	print(delivery_id)
+	print(bulk.delivery_id) # こちらも可
+except Exception as e:
+	# APIエラー
+	print(e)
+```
+
+#### 配信予約する
+
+配信を予約する場合には、 `send` メソッドにて配信日時を指定してください。以下は10分後に配信する例です。
+
+```py
+import datetime
+
+try:
+	# 送信
+	dt = datetime.datetime.now() + datetime.timedelta(minutes=10)
+	delivery_id = bulk.send(dt)
+	print(delivery_id)
+	print(bulk.delivery_id) # こちらも可
+except Exception as e:
+	# APIエラー
+	print(e)
+```
+
+### 配信状況を知る
+
+もし配信状況が知りたい場合には `get` メソッドを実行してください。これでメールの配信状況を取得します。すでに配信予約になっていると `RESERVE` といった文字列が返ってきます。
+
+```py
+bulk.get()
+print(bulk.status)
+# => RESERVE
+```
+
+### 配信を停止する
+
+もし配信を停止したい場合には `delete` メソッドを実行してください。これで該当メールを削除できます。
+
+```py
+bulk.delete()
+```
+
+
