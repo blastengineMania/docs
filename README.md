@@ -1,41 +1,47 @@
-# Website
+# blastengine開発者ドキュメント
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+blastengine開発者ドキュメントは[Docusaurus](https://docusaurus.io/)を利用して作成しています。
 
-### Installation
+[https://blastengineMania.github.io/docs/](https://blastengineMania.github.io/docs/)
+
+### インストール
 
 ```
 $ yarn
+# または
+$ npm install
 ```
 
-### Local Development
+### ローカルでの開発
 
 ```
 $ yarn start
+# または
+$ npm start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+`http://localhost:3000` で開発用サーバが立ち上がります。
 
-### Build
+### ビルド
 
 ```
 $ yarn build
+# または
+$ npm run build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+このコマンドで、 `build` 内に静的HTMLが出力されます。
 
-### Deployment
-
-Using SSH:
+### デプロイ
 
 ```
-$ USE_SSH=true yarn deploy
+$ yarn deploy
+# または
+$ npm run deploy
 ```
 
-Not using SSH:
+このコマンドでGitHub Pagesにデプロイされます。
 
-```
-$ GIT_USER=<Your GitHub username> yarn deploy
-```
+## License
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+MIT
