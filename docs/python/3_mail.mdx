@@ -1,0 +1,127 @@
+import Install from './_install.mdx';
+import Init from './_init.mdx';
+
+# 即時配信・一括配信を兼ね備えたMailクラスの使い方
+
+Mailクラスを使うと、即時配信・一括配信を区別せずにメール送信できます。 Mailクラスの実装は、TransactionクラスとBulkクラスのラッパーです。
+
+## 利用用途
+
+Mailクラスは、必要に応じて即時配信（Transaction）と一括配信（Bulk）を使い分けられます。
+
+- 即時配信
+	- ユーザー登録、パスワードリマインダーなど
+	- ECサイトの購入完了メールなど
+	- ユーザーへの通知
+- 一括配信
+	- メールマガジン
+	- キャンペーンメール
+	- イベント告知
+
+## 使い方
+
+<Install />
+
+### SDKのインポート
+
+blastengine SDK全体を管理する `Client` クラスと、`Mail` クラスをインポートします。
+
+```python
+from blastengine.Client import Blastengine
+from blastengine.Log import Mail
+```
+
+<Init />
+
+### Mailクラスのインスタンス作成と設定
+
+`Mail` クラスのインスタンスを作成し、続けてメールの内容を設定します。
+
+```python
+# メールオブジェクトの作成
+mail = Mail()
+# 件名の設定
+mail.subject('メールの件名')
+# テキスト本文の設定
+mail.text_part('テキスト本文')
+# 送信元の設定。2つ目の引数（名前）はオプション
+mail.fromAddress('info@example.jp', '管理者')
+
+# CCの設定
+mail.cc('cc1@example.com')
+# CCの宛先が複数の場合は、複数回呼び出します
+mail.cc('cc2@example.com')
+
+# BCCの設定
+mail.bcc('bcc1@example.com')
+# BCCの宛先が複数の場合は、複数回呼び出します
+mail.bcc('bcc2@example.com')
+```
+
+宛先を追加する際には `to` メソッドを使います。2つ目の引数は、置換文字列です。以下の場合は、 `__name__` というキーワードが `山田太郎` などに置換されます。
+
+```python
+transaction.to('user1@example.com', {'name': '山田太郎'})
+transaction.to('user2@example.com', {'name': '田中花子'})
+```
+
+この他、Mailクラスには以下のメソッドがあります。
+
+- encode(self, encoding)  
+	メール本文のエンコードを設定します。デフォルトは `utf-8` です。
+- html_part(self, html)  
+	HTML本文を設定します。テキスト本文と併用できます。
+- unsubscribe(self, *, url=None, email=None)  
+	メール本文に含める購読解除リンクを設定します。urlとemailのどちらか一方は指定します。
+- attachments(self, file_path)  
+	添付ファイルを設定します。複数回呼び出すことで複数の添付ファイルを設定できます。
+
+#### 添付ファイルを追加する
+
+添付ファイルは attachments メソッドで、ファイルのパスを指定してください。複数の添付ファイルを追加する場合は、複数回呼び出してください。
+
+```python
+# 添付ファイルがある場合
+mail.attachments('./test.py')
+mail.attachments('./image.png')
+```
+
+#### 購読解除リンクを追加する
+
+メールマガジンなどの購読解除リンク `Unsubscribe-List` ヘッダーを追加する場合は、`unsubscribe` メソッドを呼び出してください。
+
+```python
+# 購読解除リンクを追加する（URL、Email両方あり）
+mail.unsubscribe(url='https://example.com/unsubscribe/__hash__', email='unsubscrie+__hash__@example.com')
+# 購読解除リンクを追加する（URLのみ）
+mail.unsubscribe(url='https://example.com/unsubscribe/__hash__')
+# 購読解除リンクを追加する（Emailのみ）
+mail.unsubscribe(email='unsubscrie+__hash__@example.com')
+```
+
+この時の `__hash__` は、 to メソッドで設定できます。
+
+```python
+mail.to('user1@example.com', {'hash': '1234567890'})
+```
+
+### メールの送信
+
+送信は `Mail` クラスの `send` メソッドを呼び出します。返値はデリバリーIDになります。このデリバリーIDで、メールの送信状況や配信停止などを行います（トランザクションメールは即時配信されるので停止できません）。
+
+```python
+try:
+	# 送信（即時配信）
+	delivery_id = mail.send()
+	# 送信（予約）
+	dt = datetime.datetime.now() + datetime.timedelta(minutes=10)
+	delivery_id = bulk.send(dt)
+	print(delivery_id)
+except Exception as e:
+	# APIエラー
+	print(e)
+```
+
+## 注意点
+
+配信予約を行う場合、 `cc` や `bcc` は指定できません。

@@ -1,0 +1,97 @@
+import Install from './_install.mdx';
+import Init from './_init.mdx';
+
+# メール一覧を取得する
+
+APIやSMTPで登録したメールの一覧を取得する方法を説明します。
+
+## 使い方
+
+<Install />
+
+### SDKのインポート
+
+blastengine SDK全体を管理する `Client` クラスと、`Mail` クラスをインポートします。
+
+```python
+from blastengine.Client import Blastengine
+from blastengine.Mail import Mail
+```
+
+<Init />
+
+### Mailクラスの使い方
+
+`Mail` クラスで検索する際には、以下の2種類があります。
+
+#### 配信一覧（APIのみ）
+
+`find` メソッドでは、API経由で登録したメールの一覧を取得できます（SMTP経由は含まれません）。
+
+```python
+mails = Mail.find(params)
+```
+
+##### 検索条件
+
+`Mail.find` の引数には、検索条件を指定します。以下の条件が指定できます。
+
+| パラメーター            | 型                  | 説明                                                         |
+| ----------------------- | ------------------- | ------------------------------------------------------------ |
+| text_part               | string              | テキストパート(正規表現不可, 部分一致)                       |
+| html_part               | string              | HTMLパート(正規表現不可, 部分一致)                           |
+| subject                 | string              | 件名(正規表現不可, 部分一致)                                 |
+| from                    | string              | 送信元アドレス(正規表現不可, 部分一致)                       |
+| list_unsubscribe_mailto | string              | 購読解除メールアドレス(正規表現不可, 部分一致)               |
+| list_unsubscribe_url    | string              | 購読解除URL(正規表現不可, 部分一致)                          |
+| status[]                | array&lt;string&gt; | 配信ステータス                                               |
+| delivery_type[]         | array&lt;string&gt; | 配信種別                                                     |
+| delivery_start          | string              | 配信日時(開始位置) フォーマット（yyyy-MM-ddTHH:mm:ss+09:00） |
+| delivery_end            | string              | 配信日時(終了位置) フォーマット（yyyy-MM-ddTHH:mm:ss+09:00） |
+| size                    | integer             | 1ページ辺りの要素数 (デフォルト: 100)                        |
+| page                    | integer             | 取得するページ数 (1 indexed) (デフォルト: 1)                 |
+| sort                    | string              | 並び替え条件。カンマ区切りにより複数指定可                   |
+
+#### ログ一覧（API/SMTP）
+
+`all` メソッドでは、API経由で登録したメールのログ一覧を取得できます。SMTP経由で登録したメールのログも含まれます。
+
+```python
+mails = Mail.all(params)
+```
+
+##### 検索条件
+
+`Mail.all` の引数には、検索条件を指定します。以下の条件が指定できます。
+
+| パラメーター            | 型                  | 説明                                                         |
+| ----------------------- | ------------------- | ------------------------------------------------------------ |
+| text_part               | string              | テキストパート(正規表現不可, 部分一致)                       |
+| html_part               | string              | HTMLパート(正規表現不可, 部分一致)                           |
+| subject                 | string              | 件名(正規表現不可, 部分一致)                                 |
+| from                    | string              | 送信元アドレス(正規表現不可, 部分一致)                       |
+| list_unsubscribe_mailto | string              | 購読解除メールアドレス(正規表現不可, 部分一致)               |
+| list_unsubscribe_url    | string              | 購読解除URL(正規表現不可, 部分一致)                          |
+| status[]                | array&lt;string&gt; | 配信ステータス                                               |
+| delivery_type[]         | array&lt;string&gt; | 配信種別                                                     |
+| delivery_start          | string              | 配信日時(開始位置) フォーマット（yyyy-MM-ddTHH:mm:ss+09:00） |
+| delivery_end            | string              | 配信日時(終了位置) フォーマット（yyyy-MM-ddTHH:mm:ss+09:00） |
+| size                    | integer             | 1ページ辺りの要素数 (デフォルト: 100)                        |
+| page                    | integer             | 取得するページ数 (1 indexed) (デフォルト: 1)                 |
+| sort                    | string              | 並び替え条件。カンマ区切りにより複数指定可                   |
+
+### 結果の取得
+
+検索結果は `Transaction` クラス、または `Bulk` クラスのインスタンスのリストになります。利用できるプロパティは以下の通りです。
+
+| プロパティ       | 型       | 説明                          |
+| ---------------- | -------- | ----------------------------- |
+| delivery_id      | number   | 配信ID                        |
+| from             | object   | 送信元情報（nameとemailキー） |
+| status           | string   | 配信ステータス                |
+| delivery_time    | datetime | 配信日時                      |
+| updated_time     | datetime | 更新日時                      |
+| created_time     | datetime | 作成日時                      |
+| reservation_time | datetime | 予約日時                      |
+| delivery_type    | string   | 配信種別                      |
+| subject          | string   | 件名                          |
