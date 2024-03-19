@@ -1,0 +1,120 @@
+import Install from "./_install.mdx";
+import Init from "./_init.mdx";
+import Import from "./_import.mdx";
+
+// 即時配信・一括配信を兼ね備えたMailクラスの使い方
+
+Mailクラスを使うと、即時配信・一括配信を区別せずにメール送信できます。 Mailクラスの実装は、TransactionクラスとBulkクラスのラッパーです。
+
+## 利用用途
+
+Mailクラスは、必要に応じて即時配信（Transaction）と一括配信（Bulk）を使い分けられます。
+
+- 即時配信
+	- ユーザー登録、パスワードリマインダーなど
+	- ECサイトの購入完了メールなど
+	- ユーザーへの通知
+- 一括配信
+	- メールマガジン
+	- キャンペーンメール
+	- イベント告知
+
+## 使い方
+
+<Install />
+
+<Import />
+
+<Init />
+
+### Mailクラスのインスタンス作成と設定
+
+`Blastengine\Mail` クラスのインスタンスを作成し、続けてメールの内容を設定します。
+
+```php
+// メールオブジェクトの作成
+$mail = new Blastengine\Mail();
+// 件名の設定
+$mail.subject("メールの件名");
+// テキスト本文の設定
+$mail.text_part("テキスト本文");
+// 送信元の設定。2つ目の引数（名前）はオプション
+$mail.fromAddress("info@example.jp", "管理者");
+
+// CCの設定
+$mail.cc("cc1@example.com");
+// CCの宛先が複数の場合は、複数回呼び出します
+$mail.cc("cc2@example.com");
+
+// BCCの設定
+$mail.bcc("bcc1@example.com");
+// BCCの宛先が複数の場合は、複数回呼び出します
+$mail.bcc("bcc2@example.com");
+```
+
+宛先を追加する際には `to` メソッドを使います。2つ目の引数は、置換文字列です。以下の場合は、 `__name__` というキーワードが `山田太郎` などに置換されます。
+
+```php
+$mail->to("user1@example.com", {"name": "山田太郎"});
+$mail->to("user2@example.com", {"name": "田中花子"});
+```
+
+この他、Mailクラスには以下のメソッドがあります。
+
+- encode($encode)  
+	メール本文のエンコードを設定します。デフォルトは `utf-8` です。
+- html_part($html)  
+	HTML本文を設定します。テキスト本文と併用できます。
+- unsubscribe(array $list_unsubscribe)  
+	メール本文に含める購読解除リンクを設定します。urlとemail、2つのキーを持ちます。どちらか一方は指定します。
+- attachment(string $path)  
+	添付ファイルを設定します。複数回呼び出すことで複数の添付ファイルを設定できます。
+
+#### 添付ファイルを追加する
+
+添付ファイルは attachment メソッドで、ファイルのパスを指定してください。複数の添付ファイルを追加する場合は、複数回呼び出してください。
+
+```php
+// 添付ファイルがある場合
+$mail.attachment("./test.py")
+$mail.attachment("./image.png")
+```
+
+#### 購読解除リンクを追加する
+
+メールマガジンなどの購読解除リンク `Unsubscribe-List` ヘッダーを追加する場合は、`unsubscribe` メソッドを呼び出してください。
+
+```php
+// 購読解除リンクを追加する（URL、Email両方あり）
+$mail->unsubscribe(array("url" => "https://example.com/unsubscribe/__hash__", "email" => "unsubscrie+__hash__@example.com"));
+// 購読解除リンクを追加する（URLのみ）
+$mail->unsubscribe(array("url" => "http://example.com/unsubscribe/__hash__"));
+// 購読解除リンクを追加する（Emailのみ）
+$mail->unsubscribe(array("email" => "unsubscrie+__hash__@example.com"));
+```
+
+この時の `__hash__` は、 to メソッドで設定できます。
+
+この時の `__hash__` は、 `to` メソッドで設定できます。
+
+```php
+$mail->to("user1@example.com", array("hash" => "12345", "name" => "User 1"));
+$mail->to("user2@example.com", array("hash" => "67890", "name" => "User 2"));
+```
+
+### メールの送信
+
+送信は `Mail` クラスの `send` メソッドを呼び出します。返値はデリバリーIDになります。このデリバリーIDで、メールの送信状況や配信停止などを行います（トランザクションメールは即時配信されるので停止できません）。
+
+```php
+// 送信（即時配信）
+$delivery_id = $mail.send();
+// 送信（予約）
+$date = date("c", strtotime("+10 minutes"));
+$delivery_id = $bulk->send(new \DateTime($date));
+var_dump(delivery_id);
+```
+
+## 注意点
+
+配信予約を行う場合、 `cc` や `bcc` は指定できません。

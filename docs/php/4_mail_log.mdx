@@ -1,0 +1,71 @@
+import Install from './_install.mdx';
+import Init from './_init.mdx';
+import Import from "./_import.mdx";
+
+# メールの送信ログを取得する
+
+配信したメールのログを取得する際には Log クラスを使います。
+
+## 利用用途
+
+配信ログは、メール1通に対して1つのログが作成されます。ログには以下の情報などが含まれます。
+
+- 配信日時
+- 配信ID
+- ログID
+- メールアドレス
+- 開封日時
+
+## 使い方
+
+<Install />
+
+<Import />
+
+<Init />
+
+### Logクラスの使い方
+
+`Log` クラスは、 `Blastengine\Log::find` で検索を行います。結果は `Log` クラスのインスタンスのリストになります。
+
+```php
+$params = array(
+	"delivery_type" => ['BULK'],
+	"size" => 10,
+);
+$data = Blastengine\Log::find($params);
+```
+
+#### ログの検索条件
+
+`Blastengine\Log::find` の引数には、検索条件を指定します。以下のような条件が指定できます。
+
+| パラメーター | 型  | 説明 |
+| ------------ | --- | ---- |
+| anchor       | integer | 配信ログID。1以上の数値を指定。 |
+| count 			| integer | 取得件数。デフォルトは100、最大1000。 |
+| email 		| string | メールアドレス。完全一致。 |
+| delivery_type[] | array&lt;string&gt; | 配信種別。TRANSACTION、BULK、SMTPのいずれか。 |
+| delivery_id	 | integer | 配信ID。 |
+| status[] 		| array&lt;string&gt; | 最終送信ステータス。SENT、RETRY、HARDERROR、SOFTERROR、DROP、ALLのいずれか。 |
+| response_code[] | array&lt;string&gt; | レスポンスコード。 |
+| delivery_start | string | 配信日時(開始位置)。ISO 8601拡張形式のdate-time値。フォーマット（yyyy-MM-ddTHH:mm:ss+09:00） |
+| delivery_end 	| string | 配信日時(終了位置)。ISO 8601拡張形式のdate-time値。フォーマット（yyyy-MM-ddTHH:mm:ss+09:00） |
+
+### 結果の取得
+
+`Log` クラスのインスタンスは、以下のような情報が取得できます。
+
+| プロパティ            | 型       | 説明                     |
+| --------------------- | -------- | ------------------------ |
+| delivery_time         | datetime | 配信日時                 |
+| delivery_id           | integer  | 配信ID                   |
+| maillog_id            | integer  | ログID                   |
+| delivery_type         | string   | 配信種別                 |
+| email                 | string   | メールアドレス           |
+| status                | string   | 最終送信ステータス       |
+| last_response_code    | string   | 最終レスポンスコード     |
+| last_response_message | string   | 最終レスポンスメッセージ |
+| open_time             | datetime | 開封日時                 |
+| created_time          | datetime | 作成日時                 |
+| updated_time          | datetime | 更新日時                 |
